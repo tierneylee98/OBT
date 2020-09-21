@@ -1,0 +1,9 @@
+body_image,body_condition,arrow_key_correct,trial_response_correct
+stimuli/Backwards-L.png,Backwards-L,c,l
+stimuli/Backwards-R.png,Backwards-R,n,r
+stimuli/Forwards-L.png,Forwards-L,c,l
+stimuli/Forwards-R.png,Forwards-R,n,r
+stimuli/Backwards-L.png,Backwards-L,c,l
+stimuli/Backwards-R.png,Backwards-R,n,r
+stimuli/Forwards-L.png,Forwards-L,c,l
+stimuli/Forwards-R.png,Forwards-R,n,r

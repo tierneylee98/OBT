@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Own Body Transformation Task</title>
+        <script src="jspsych-6.1.0/jspsych.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-html-keyboard-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-image-keyboard-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-instructions.js"></script>
+        <script src = "block_trials/perspective.js"></script>
+        <script src = "block_trials/perspective_practice.js"></script>
+        <script src = "block_trials/spatial.js"></script>
+        <script src = "block_trials/spatial_practice.js"></script>
+        <link href="jspsych-6.1.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+    </head>
+    <body></body>
+    <script>
+
+        //set up trial counts
+        trial_absolute_count = 1;
+        perspective_practice_within_count = 1;
+        spatial_practice_within_count = 1;
+        perspective_within_count = 1;
+        spatial_within_count = 1;
+
+        //set up block trials
+        var perspective_practice_info = perspective_practice;
+        var perspective_info = jsPsych.randomization.shuffle(perspective);
+        var spatial_practice_info = spatial_practice;
+        var spatial_info = jsPsych.randomization.shuffle(spatial);
+
+        //set up fixation
+        var fixation_image = 'signals/fixpoint.png';
+        //set up feedback images
+        var correct_image = 'signals/correct.bmp';
+        var wrong_image = 'signals/incorrect.bmp';
+
+        // set up feedback and conditions for practice trials
+        var too_slow_message = {
+            type: 'html-keyboard-response',
+            stimulus: '<p style="color:red; font-size:20px;">Please respond faster.</p>',
+            choices: jsPsych.NO_KEYS,
+            trial_duration: 2000,
+            post_trial_gap: 1000,
+            data: {trial_segment: 'too_slow'}
+        }
+        var too_slow_conditional = {
+            timeline: [too_slow_message],
+            conditional_function: function() {
+                var last_trial_data = jsPsych.data.get().last(1).values()[0];
+                if (last_trial_data.trial_segment == "body_image") {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        var practice_correct = {
+            type: 'image-keyboard-response',
+            stimulus: correct_image,
+            choices: jsPsych.NO_KEYS,
+            trial_duration: 2000,
+            post_trial_gap: 1000,
+            data: {trial_segment: 'practice_correct'}
+        }
+
+        var practice_correct_conditional = {
+            timeline: [practice_correct],
+            conditional_function: function() {
+                var last_trial_data = jsPsych.data.get().last(1).values()[0];
+                if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(last_trial_data.key_press) == last_trial_data.arrow_key_correct) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        var practice_wrong = {
+            type: 'image-keyboard-response',
+            stimulus: wrong_image,
+            choices: jsPsych.NO_KEYS,
+            trial_duration: 2000,
+            post_trial_gap: 1000,
+            data: {trial_segment: 'practice_wrong'}
+        }
+
+        var practice_wrong_conditional = {
+            timeline: [practice_wrong],
+            conditional_function: function() {
+                var last_trial_data = jsPsych.data.get().last(1).values()[0];
+                if (last_trial_data.key_press !== null && jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(last_trial_data.key_press) !== last_trial_data.arrow_key_correct) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        //set up timeline
+        var timeline = [];
+
+        var perspective_practice_instructions = {
+            type: 'instructions',
+            pages: ["<p>Imagine yourself in the body of the cartoon figure.</p>" +
+                    "<p>Try and see things through it's eyes.</p>" +
+                    "<p>From this point of view, determine whether the glove is on your right or left hand.</p>" +
+                    "<p>If the glove is on your right hand, press the N-key.</p>" +
+                    "<p>If the glove is on your left hand, press the C-key.</p>" +
+                    "<p>You can first practise this task with some feedback.</p>" +
+                    "<p>Press the next button to begin the practice</p>"
+          ],
+            show_clickable_nav: true
+        };
+        timeline.push(perspective_practice_instructions);
+
+        //set up perspective practice block
+        for (var i=0; i<perspective_practice_info.length; i++) {
+            // add fixation to this trial
+            var fixation = {
+                type: 'image-keyboard-response',
+                stimulus: fixation_image,
+                choices: jsPsych.NO_KEYS,
+                trial_duration: 500,
+                data: {trial_segment: 'fixation', condition: perspective_practice_info[i].condition}
+            }
+            timeline.push(fixation);
+
+            // set up body image
+            var body_image = {
+                type: 'image-keyboard-response',
+                stimulus: perspective_practice_info[i].body_image,
+                choices: ['c','n'],
+                response_ends_trial: true,
+                trial_duration: 1000,
+                post_trial_gap: 500,
+                data: {
+                  block: 'perpective_practice',
+                  trial_absolute: function() {
+                    return trial_absolute_count;
+                  },
+                  trial_within: function() {
+                    return perspective_practice_within_count;
+                  },
+                  trial_segment: 'body_image',
+                  body_condition: perspective_practice_info[i].body_condition,
+                  arrow_key_correct: perspective_practice_info[i].arrow_key_correct,
+                  trial_response_correct: perspective_practice_info[i].trial_response_correct
+                },
+                on_finish: function(data) {
+                  var correct=false;
+                  var trial_response;
+                  trial_absolute_count += 1;
+                  perspective_practice_within_count += 1;
+
+
+                  if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == data.arrow_key_correct) {
+                      correct = true;
+                  }
+
+                  if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == "c") {
+                      trial_response = 'l';
+                  }
+                  else if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == "n") {
+                      trial_response = 'r';
+                  }
+                  // add accuracy to data for this trial
+                  data.correct = correct;
+                  data.trial_response = trial_response;
+                }
+            }
+            timeline.push(body_image);
+            timeline.push(practice_correct_conditional);
+            timeline.push(practice_wrong_conditional);
+            timeline.push(too_slow_conditional);
+        }
+
+        var perspective_instructions = {
+            type: 'instructions',
+            pages: ["<p>By now, you probably have an idea about what to do. If you have any questions, contact the experimenter. If you do not have any questions, feel free to continue. </p>" +
+                    "<p>From now on there will be no feedback on your performance.  </p>" +
+                    "<p>So remember:</p>" +
+                    "<p>If the glove is on your right hand, press the N-key</p>" +
+                    "<p>If the glove is on your left hand, press the C-key</p>" +
+                    "<p>Press the next button to begin the task</p>"
+          ],
+            show_clickable_nav: true
+        };
+        timeline.push(perspective_instructions);
+
+        //set up perspective block
+        for (var i=0; i<perspective_info.length; i++) {
+            // add fixation to this trial
+            // set up the fixation, since this will be the same for all trials
+            var fixation = {
+                type: 'image-keyboard-response',
+                stimulus: fixation_image,
+                choices: jsPsych.NO_KEYS,
+                trial_duration: 500,
+                data: {trial_segment: 'fixation', condition: perspective_info[i].condition}
+            }
+            timeline.push(fixation);
+
+            // set up body image
+            var body_image = {
+                type: 'image-keyboard-response',
+                stimulus: perspective_info[i].body_image,
+                choices: ['c','n'],
+                response_ends_trial: true,
+                trial_duration: 1000,
+                post_trial_gap: 500,
+                data: {
+                  block: 'perpective_practice',
+                  trial_absolute: function() {
+                    return trial_absolute_count;
+                  },
+                  trial_within: function() {
+                    return perspective_within_count;
+                  },
+                  trial_segment: 'body_image',
+                  body_condition: perspective_info[i].body_condition,
+                  arrow_key_correct: perspective_info[i].arrow_key_correct,
+                  trial_response_correct: perspective_info[i].trial_response_correct
+                },
+                on_finish: function(data) {
+                  var correct=false;
+                  var trial_response;
+                  trial_absolute_count += 1;
+                  perspective_within_count += 1;
+
+
+                  if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == data.arrow_key_correct) {
+                      correct = true;
+                  }
+
+                  if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == "c") {
+                      trial_response = 'l';
+                  }
+                  else if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == "n") {
+                      trial_response = 'r';
+                  }
+                  // add accuracy to data for this trial
+                  data.correct = correct;
+                  data.trial_response = trial_response;
+                }
+            }
+            timeline.push(body_image);
+        }
+
+        var spatial_practice_instructions = {
+            type: 'instructions',
+            pages: ["<p>Just look at the screen from where you are right now.</p>" +
+                    "<p>From this point of view, determine whether the glove is on the right or left side of the screen.</p>" +
+                    "<p>If the glove is on the right side of the screen, press the N-key</p>" +
+                    "<p>If the glove is on the left side of the screen, press the C-key</p>" +
+                    "<p>You can first practise this task with some feedback.</p>" +
+                    "<p>Press the next button to begin the practice</p>"],
+            show_clickable_nav: true
+        };
+        timeline.push(spatial_practice_instructions);
+
+        //set up spatial practice block
+        for (var i=0; i<spatial_practice_info.length; i++) {
+            // add fixation to this trial
+            var fixation = {
+                type: 'image-keyboard-response',
+                stimulus: fixation_image,
+                choices: jsPsych.NO_KEYS,
+                trial_duration: 500,
+                data: {trial_segment: 'fixation', condition: spatial_practice_info[i].condition}
+            }
+            timeline.push(fixation);
+
+            // set up body image
+            var body_image = {
+                type: 'image-keyboard-response',
+                stimulus: spatial_practice_info[i].body_image,
+                choices: ['c','n'],
+                response_ends_trial: true,
+                trial_duration: 1000,
+                post_trial_gap: 500,
+                data: {
+                  block: 'perpective_practice',
+                  trial_absolute: function() {
+                    return trial_absolute_count;
+                  },
+                  trial_within: function() {
+                    return spatial_practice_within_count;
+                  },
+                  trial_segment: 'body_image',
+                  body_condition: spatial_practice_info[i].body_condition,
+                  arrow_key_correct: spatial_practice_info[i].arrow_key_correct,
+                  trial_response_correct: spatial_practice_info[i].trial_response_correct
+                },
+                on_finish: function(data) {
+                  var correct=false;
+                  var trial_response;
+                  trial_absolute_count += 1;
+                  spatial_practice_within_count += 1;
+
+
+                  if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == data.arrow_key_correct) {
+                      correct = true;
+                  }
+
+                  if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == "c") {
+                      trial_response = 'l';
+                  }
+                  else if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == "n") {
+                      trial_response = 'r';
+                  }
+                  // add accuracy to data for this trial
+                  data.correct = correct;
+                  data.trial_response = trial_response;
+                }
+            }
+            timeline.push(body_image);
+            timeline.push(practice_correct_conditional);
+            timeline.push(practice_wrong_conditional);
+            timeline.push(too_slow_conditional);
+        }
+
+        var spatial_instructions = {
+            type: 'instructions',
+            pages: ["<p>By now, you probably have an idea about what to do. If you have any questions, contact the experimenter. If you do not have any questions, feel free to continue. </p>" +
+                    "<p>From now on there will be no feedback on your performance.  </p>" +
+                    "<p>So remember:</p>" +
+                    "<p>If the glove is on the right side of the screen, press the N-key</p>" +
+                    "<p>If the glove is on the left side of the screen, press the C-key</p>" +
+                    "<p>Press the next button to begin the task</p>"
+          ],
+            show_clickable_nav: true
+        };
+        timeline.push(spatial_instructions);
+
+        //set up spatial block
+        for (var i=0; i<spatial_info.length; i++) {
+            // add fixation to this trial
+            // set up the fixation, since this will be the same for all trials
+            var fixation = {
+                type: 'image-keyboard-response',
+                stimulus: fixation_image,
+                choices: jsPsych.NO_KEYS,
+                trial_duration: 500,
+                data: {trial_segment: 'fixation', condition: spatial_info[i].condition}
+            }
+            timeline.push(fixation);
+
+            // set up body image
+            var body_image = {
+                type: 'image-keyboard-response',
+                stimulus: spatial_info[i].body_image,
+                choices: ['c','n'],
+                response_ends_trial: true,
+                trial_duration: 1000,
+                post_trial_gap: 500,
+                data: {
+                  block: 'perpective_practice',
+                  trial_absolute: function() {
+                    return trial_absolute_count;
+                  },
+                  trial_within: function() {
+                    return spatial_within_count;
+                  },
+                  trial_segment: 'body_image',
+                  body_condition: spatial_info[i].body_condition,
+                  arrow_key_correct: spatial_info[i].arrow_key_correct,
+                  trial_response_correct: spatial_info[i].trial_response_correct
+                },
+                on_finish: function(data) {
+                  var correct=false;
+                  var trial_response;
+                  trial_absolute_count += 1;
+                  spatial_within_count += 1;
+
+
+                  if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == data.arrow_key_correct) {
+                      correct = true;
+                  }
+
+                  if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == "c") {
+                      trial_response = 'l';
+                  }
+                  else if (jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(data.key_press) == "n") {
+                      trial_response = 'r';
+                  }
+                  // add accuracy to data for this trial
+                  data.correct = correct;
+                  data.trial_response = trial_response;
+                }
+            }
+            timeline.push(body_image);
+        }
+
+        // add end message
+        var end = {
+            type: 'html-keyboard-response',
+            stimulus: '<p>Great! You&#39;re done with this task.</p><p>Thank you for your time.</p>',
+            trial_duration: 5000
+        };
+
+        jsPsych.init({
+            timeline: timeline,
+            on_finish: function(data) {
+                // see docs for info on data formatting and saving:
+                // https://www.jspsych.org/core_library/jspsych-data/#csv
+                // https://www.jspsych.org/core_library/jspsych-data/#json
+                // https://www.jspsych.org/core_library/jspsych-data/#localsave
+                jsPsych.data.get().localSave("csv","go_stop_data.csv");
+            }
+        });
+
+    </script>
+</html>
