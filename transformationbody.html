@@ -97,13 +97,36 @@
             }
         }
 
+        //set up pause experiment if no response for 3 trial
+        var pause = {
+          type: 'html-keyboard-response',
+          stimulus:"<p>Hi are you still there? You have not responded to 3 consecutive trials. Please press the space bar to continue the task.</p>",
+          choices: jsPsych.ALL_KEYS,
+          trial_duration: null,
+          data: {trial_segment: 'pause'}
+        }
+        var pause_conditional = {
+          timeline: [pause],
+          conditional_function: function() {
+            var last_trial_data_1 = jsPsych.data.get().last(6).values()[5];
+            var last_trial_data_2 = jsPsych.data.get().last(6).values()[3];
+            var last_trial_data_3 = jsPsych.data.get().last(6).values()[1];
+            if (last_trial_data_1.key_press == null && last_trial_data_2.key_press == null && last_trial_data_3.key_press == null) {
+              return true;
+            } else {
+              return false;
+            }
+          }
+        }
+
         //set up timeline
         var timeline = [];
 
         var perspective_practice_instructions = {
             type: 'instructions',
-            pages: ["<p>Imagine yourself in the body of the cartoon figure.</p>" +
-                    "<p>Try and see things through it's eyes.</p>" +
+            pages: ["<p>Hi there! Welcome to the task. In this task, you will see a cartoon figure like the one below.</p>" +
+                    "<img src='stimuli/Backwards-L.png' width='500' height='400'>" +
+                    "<p>Try to imagine yourself in the body of that cartoon figure.</p>" +
                     "<p>From this point of view, determine whether the glove is on your right or left hand.</p>" +
                     "<p>If the glove is on your right hand, press the N-key.</p>" +
                     "<p>If the glove is on your left hand, press the C-key.</p>" +
@@ -114,7 +137,7 @@
         };
         timeline.push(perspective_practice_instructions);
 
-        //set up perspective practice block
+        // set up perspective practice block
         for (var i=0; i<perspective_practice_info.length; i++) {
             // add fixation to this trial
             var fixation = {
@@ -245,12 +268,16 @@
                 }
             }
             timeline.push(body_image);
+            if (i >= 2) {
+              timeline.push(pause_conditional);
+            };
+
         }
 
         var spatial_practice_instructions = {
             type: 'instructions',
-            pages: ["<p>Just look at the screen from where you are right now.</p>" +
-                    "<p>From this point of view, determine whether the glove is on the right or left side of the screen.</p>" +
+            pages: ["<p>Thank you! Now, for the second part of the task, we just want you to look at the screen from where you are right now.</p>" +
+                    "<p>From where you are sitting, determine whether the glove is on the right or left side of the screen.</p>" +
                     "<p>If the glove is on the right side of the screen, press the N-key</p>" +
                     "<p>If the glove is on the left side of the screen, press the C-key</p>" +
                     "<p>You can first practise this task with some feedback.</p>" +
@@ -390,14 +417,18 @@
                 }
             }
             timeline.push(body_image);
+            if (i >= 2) {
+              timeline.push(pause_conditional);
+            };
         }
 
         // add end message
         var end = {
             type: 'html-keyboard-response',
-            stimulus: '<p>Great! You&#39;re done with this task.</p><p>Thank you for your time.</p>',
+            stimulus: '<p>Thank you for your paticipation!</p><p>If you have any questions about this task, please contact us at rachel.knight@mrc-cbu.cam.ac.uk</p><p>You may now close this web page</p>',
             trial_duration: 5000
         };
+        timeline.push(end);
 
         jsPsych.init({
             timeline: timeline,
